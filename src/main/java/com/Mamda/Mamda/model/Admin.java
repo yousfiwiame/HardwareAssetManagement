@@ -1,42 +1,22 @@
 package com.Mamda.Mamda.model;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 
 @Entity
-
+@Table(name = "admin")
 public class Admin {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY )
+    @GeneratedValue(strategy = GenerationType.AUTO )
     private int id;
 
-    @Column(nullable = false)
     private String username;
-
-    @Column(unique = true, nullable = false)
     private String email;
-
-    @Column(nullable = false)
     private String password;
 
-    @Column
-    private String resetToken;
+    @OneToOne(mappedBy = "admin", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private PasswordResetToken passwordResetToken;
 
-    @Column
-    private LocalDateTime resetTokenExpiryDate;
-
-    public Admin(){
-
-    }
-
-    public Admin(int id, String username, String email, String password, String resetToken) {
-        this.id = id;
-        this.username = username;
-        this.email = email;
-        this.password = password;
-        this.resetToken = resetToken;
-    }
 
     public int getId() {
         return id;
@@ -70,19 +50,11 @@ public class Admin {
         this.password = password;
     }
 
-    public String getResetToken() {
-        return resetToken;
+    public PasswordResetToken getPasswordResetToken() {
+        return passwordResetToken;
     }
 
-    public void setResetToken(String resetToken) {
-        this.resetToken = resetToken;
-    }
-
-    public LocalDateTime getResetTokenExpiryDate() {
-        return resetTokenExpiryDate;
-    }
-
-    public void setResetTokenExpiryDate(LocalDateTime resetTokenExpiryDate) {
-        this.resetTokenExpiryDate = resetTokenExpiryDate;
+    public void setPasswordResetToken(PasswordResetToken passwordResetToken) {
+        this.passwordResetToken = passwordResetToken;
     }
 }

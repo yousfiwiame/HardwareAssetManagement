@@ -1,7 +1,7 @@
 package com.Mamda.Mamda.mapper;
 
 import com.Mamda.Mamda.dto.EmployeeDto;
-import com.Mamda.Mamda.entity.Employee;
+import com.Mamda.Mamda.model.Employee;
 
 public class EmployeeMapper {
     public static EmployeeDto mapToEmployeeDto(Employee employee) {
