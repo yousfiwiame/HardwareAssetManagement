@@ -1,7 +1,7 @@
 package com.Mamda.Mamda.service;
 
 import com.Mamda.Mamda.dto.EmployeeDto;
-import com.Mamda.Mamda.entity.Employee;
+import com.Mamda.Mamda.model.Employee;
 import com.Mamda.Mamda.exception.ResourceNotFoundException;
 import com.Mamda.Mamda.mapper.EmployeeMapper;
 import com.Mamda.Mamda.repository.EmployeeRepository;

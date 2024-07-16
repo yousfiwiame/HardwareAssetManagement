@@ -1,8 +1,14 @@
 package com.Mamda.Mamda.controller;
 
-import com.Mamda.Mamda.service.AdminService;
+import com.Mamda.Mamda.dto.AdminDto;
+import com.Mamda.Mamda.dto.AdminLoginDto;
+import com.Mamda.Mamda.model.Admin;
+import com.Mamda.Mamda.model.PasswordResetToken;
+import com.Mamda.Mamda.repository.AdminRepository;
+import com.Mamda.Mamda.repository.TokenRepository;
+import com.Mamda.Mamda.service.AdminServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -12,18 +18,29 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     @Autowired
-    private AdminService adminService;
+    AdminServiceImpl adminService;
+
+    @Autowired
+    AdminRepository adminRepository;
+
+    @Autowired
+    TokenRepository tokenRepository;
+
+    private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
 
     @GetMapping("/login")
-    public String showLoginPage(@RequestParam(value = "resetSuccess", required = false) String resetSuccess, Model model) {
-        if (resetSuccess != null) {
-            model.addAttribute("successMessage", "Password updated successfully. Please log in.");
-        }
+    public String showLoginForm(){
         return "login";
     }
 
+    @PostMapping("/login")
+    public void login(@ModelAttribute AdminLoginDto adminLoginDto, Model model){
+        adminService.loadUserByUsername(adminLoginDto.getEmail());
+    }
+
     @GetMapping("/adminDashboard")
-    public String adminDashboard(){
+    public String showAdminDashboard(){
         return "adminDashboard";
     }
 
@@ -33,42 +50,36 @@ public class AdminController {
     }
 
     @PostMapping("/forgotPassword")
-    public String processForgotPasswordForm(@RequestParam("email") String email, Model model) {
-        try {
-            adminService.sendResetPasswordEmail(email);
-            model.addAttribute("successMessage", "A password reset link has been sent to " + email);
-        } catch (UsernameNotFoundException e) {
-            model.addAttribute("errorMessage", "The email address is not valid.");
-        } catch (Exception e) {
-            model.addAttribute("errorMessage", "An error occurred while sending the reset email.");
+    public String forgotPasswordProcess(@ModelAttribute AdminDto adminDto){
+        String output ="";
+        Admin admin = adminRepository.findByEmail(adminDto.getEmail());
+        if(admin != null){
+            output = adminService.sendEmail(admin);
         }
-        return "forgotPassword";
+        if (output.equals("success")) {
+            return "redirect:/forgotPassword?success";
+        }
+        return "redirect:/login?error";
     }
 
-    @GetMapping("/resetPassword")
-    public String showResetPasswordPage(@RequestParam("token") String token, Model model) {
-        model.addAttribute("token", token);
-        return "resetPassword";
+    @GetMapping("/resetPassword/{token}")
+    public String resetPasswordForm(@PathVariable String token, Model model) {
+        PasswordResetToken reset = tokenRepository.findByToken(token);
+        if (reset != null && adminService.hasExipred(reset.getExpiryDateTime())) {
+            model.addAttribute("email", reset.getAdmin().getEmail());
+            return "resetPassword";
+        }
+        return "redirect:/forgotPassword?error";
     }
 
     @PostMapping("/resetPassword")
-    public String processResetPasswordForm(@RequestParam("token") String token,
-                                           @RequestParam("newPassword") String newPassword,
-                                           @RequestParam("confirmPassword") String confirmPassword,
-                                           Model model) {
-        if (!newPassword.equals(confirmPassword)) {
-            model.addAttribute("errorMessage", "Passwords do not match.");
-            model.addAttribute("token", token);
-            return "resetPassword";
+    public String passwordResetProcess(@ModelAttribute AdminDto adminDto) {
+        Admin admin = adminRepository.findByEmail(adminDto.getEmail());
+        if(admin!= null) {
+            admin.setPassword(passwordEncoder.encode(adminDto.getPassword()));
+            adminRepository.save(admin);
         }
-        try {
-            adminService.resetPassword(token, newPassword);
-            return "redirect:/login?resetSuccess";
-        } catch (IllegalArgumentException e) {
-            model.addAttribute("errorMessage", e.getMessage());
-            model.addAttribute("token", token);
-            return "resetPassword";
-        }
+        return "redirect:/login";
     }
 
 }
